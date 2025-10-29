@@ -1,0 +1,9 @@
+[main.plugins.onscreen_menu]
+enabled = true
+
+# Optional rclone destination used by "Upload logs":
+# rclone_remote = "gdrive:pwna-logs"
+
+# Make sure your UI is set correctly for Waveshare 1.3" LCD HAT:
+# [ui]
+# display = "lcdhat"
