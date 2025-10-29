@@ -28,6 +28,7 @@ On-device menu for the ST7789 LCD HAT with buttons.
 # On the Pi
 sudo mkdir -p /usr/local/share/pwnagotchi/custom-plugins # If it doesn't exist already
 cd /usr/local/share/pwnagotchi/custom-plugins
-sudo git clone https://github.com/cydrysdale/pwnagotchi.git pwnagotchi-repo
-sudo cp -r pwnagotchi-repo/plugins/onscreen_menu ./onscreen_menu
+sudo git clone https://github.com/cydrysdale/pwnagotchi.git --depth=1 --branch main --single-branch onscreen_menu_temp
+sudo mv onscreen_menu_temp/plugins/onscreen_menu ./onscreen_menu
+sudo rm -rf onscreen_menu_temp
 sudo bash ./onscreen_menu/install.sh
