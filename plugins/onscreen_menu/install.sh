@@ -32,18 +32,6 @@ if [ -d "$DEST_BASE/$PLUGIN_NAME/scripts" ]; then
   sudo find "$DEST_BASE/$PLUGIN_NAME/scripts" -type f -iname "*.sh" -exec chmod +x {} \;
 fi
 
-# Make tools executable (agent skeleton etc.)
-if [ -d "$DEST_BASE/$PLUGIN_NAME/tools" ]; then
-  echo "[*] Making tool files executable..."
-  sudo find "$DEST_BASE/$PLUGIN_NAME/tools" -type f -iname "*.py" -exec chmod +x {} \;
-fi
-
-if [ -f "$DEST_BASE/$PLUGIN_NAME/tools/agent_skeleton.py" ]; then
-  echo "[*] Installing agent skeleton to /usr/local/bin/pwn-deauth-agent.py"
-  sudo cp "$DEST_BASE/$PLUGIN_NAME/tools/agent_skeleton.py" /usr/local/bin/pwn-deauth-agent.py
-  sudo chmod +x /usr/local/bin/pwn-deauth-agent.py
-fi
-
 # Create log dir & audit log file with safe permissions
 echo "[*] Creating audit log (if missing) and setting permissions..."
 sudo mkdir -p /var/log/pwnagotchi
