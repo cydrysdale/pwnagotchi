@@ -10,6 +10,28 @@ DEST_BASE="${1:-/etc/pwnagotchi/custom_plugins}"
 PLUGIN_NAME="onscreen_menu"
 SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Validate destination path for security
+if [[ "$DEST_BASE" == *".."* ]]; then
+  echo "[!] ERROR: Path traversal detected in destination: $DEST_BASE"
+  exit 1
+fi
+
+if [[ ! "$DEST_BASE" =~ ^/[a-zA-Z0-9/_-]+$ ]]; then
+  echo "[!] ERROR: Invalid destination path format: $DEST_BASE"
+  exit 1
+fi
+
+# Confirm non-default paths
+if [ $# -eq 1 ]; then
+  echo "[!] WARNING: Installing to non-default location: $DEST_BASE"
+  read -p "    Continue? (y/N): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "[*] Installation cancelled."
+    exit 0
+  fi
+fi
+
 echo "[*] Installing $PLUGIN_NAME to $DEST_BASE/$PLUGIN_NAME"
 
 # Prepare destination
@@ -56,6 +78,14 @@ Next steps:
      sudo systemctl restart pwnagotchi
 
 EOF
+
+# Generate secure deauth token with proper permissions
+echo "[*] Generating deauth token..."
 head -c 16 /dev/urandom | xxd -p -c 100 | sudo tee /etc/pwnagotchi/deauth_token >/dev/null
+sudo chown root:root /etc/pwnagotchi/deauth_token
+sudo chmod 600 /etc/pwnagotchi/deauth_token
+echo "[*] Deauth token created (permissions: 600)."
+
+# Create allow file with secure permissions
 echo "allow" | sudo tee /etc/pwnagotchi/allow_deauth >/dev/null
-echo "[*] Deauth token created."
+sudo chmod 644 /etc/pwnagotchi/allow_deauth
