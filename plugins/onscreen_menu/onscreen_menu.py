@@ -150,33 +150,70 @@ class OnscreenMenu(Plugin):
         except Exception:
             logging.exception("[onscreen_menu] apply_initial_layout update failed")
 
-# Helper utilities exported for local scripts to reuse -------------------
-def _audit(entry):
-    try:
-        os.makedirs(os.path.dirname(DEAUTH_LOG), exist_ok=True)
-        with open(DEAUTH_LOG, "a") as f:
-            f.write(json.dumps(entry) + "\n")
-    except Exception:
-        logging.exception("_audit failed")
+# Import shared utilities
+try:
+    from .utils import (
+        audit,
+        check_permit,
+        notify_agent,
+        read_deauth_state,
+        write_deauth_state,
+        create_audit_entry
+    )
+except ImportError:
+    logging.warning("[onscreen_menu] Failed to import utils, using fallback functions")
 
-def _permit():
-    if not os.path.exists(DEAUTH_ALLOW):
-        return False, "allow-file-missing"
-    if not os.path.exists(DEAUTH_TOKEN):
-        return False, "token-missing"
-    return True, "ok"
-
-def _notify_agent(action):
-    """Notify a local agent endpoint non-blocking. Returns True if started."""
-    try:
-        if not os.path.exists(DEAUTH_TOKEN):
+    # Fallback implementations if utils is not available
+    def audit(entry):
+        try:
+            os.makedirs(os.path.dirname(DEAUTH_LOG), exist_ok=True)
+            with open(DEAUTH_LOG, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+            return True
+        except Exception:
+            logging.exception("_audit failed")
             return False
-        token = open(DEAUTH_TOKEN).read().strip()
-        payload = {"action": action, "token": token, "ts": time.time()}
-        subprocess.Popen(["curl", "-s", "-X", "POST", "-H", "Content-Type: application/json",
-                          "-d", json.dumps(payload), AGENT_HTTP],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return True
-    except Exception:
-        logging.exception("_notify_agent failed")
+
+    def check_permit():
+        if not os.path.exists(DEAUTH_ALLOW):
+            return False, "allow-file-missing"
+        if not os.path.exists(DEAUTH_TOKEN):
+            return False, "token-missing"
+        return True, "ok"
+
+    def notify_agent(action):
+        try:
+            if not os.path.exists(DEAUTH_TOKEN):
+                return False, "token-missing"
+            token = open(DEAUTH_TOKEN).read().strip()
+            payload = {"action": action, "token": token, "ts": time.time()}
+            subprocess.Popen(["curl", "-s", "-X", "POST", "-H", "Content-Type: application/json",
+                              "-d", json.dumps(payload), AGENT_HTTP],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True, None
+        except Exception:
+            logging.exception("_notify_agent failed")
+            return False, "exception"
+
+    def read_deauth_state():
+        try:
+            if os.path.exists(DEAUTH_FLAG):
+                with open(DEAUTH_FLAG, 'r') as f:
+                    return f.read().strip() == "1"
+        except Exception:
+            pass
         return False
+
+    def write_deauth_state(enabled):
+        try:
+            os.makedirs(os.path.dirname(DEAUTH_FLAG), exist_ok=True)
+            with open(DEAUTH_FLAG, 'w') as f:
+                f.write("1" if enabled else "0")
+            return True
+        except Exception:
+            return False
+
+    def create_audit_entry(action, method="script", **kwargs):
+        entry = {"ts": datetime.utcnow().isoformat() + "Z", "action": action, "method": method}
+        entry.update(kwargs)
+        return entry
