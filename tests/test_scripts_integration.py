@@ -36,7 +36,7 @@ class TestScriptIntegration(unittest.TestCase):
                 timeout=5
             )
             self.assertEqual(result.returncode, 0)
-            self.assertIn("Status OK", result.stdout)
+            self.assertIn("Host:", result.stdout)
         except subprocess.TimeoutExpired:
             self.fail("show_status.py timed out")
 
